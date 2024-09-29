@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"> 
+    <title>Brain Tumor Classification Using Deep Learning</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <center>
+        <br><h2>Brain Tumor Detection</h2><br>
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" name="file" class="btn btn-success" id="imageUp" accept="image/*">
+            <button type="button" class="btn btn-success" id="btn-pred">Predict</button>
+        </form><br>
+        <div class="section" style="display: flex;">
+            <div class="left" style="width: 20%; display: block">
+                <div class="orginal-image" style="margin-left: 20px;">
+                    <h4 style="text-align: center;">Original Image</h4>
+                    <div class="image-section" style="display:flex;"></div>
+                </div>
+                <div class="highlighted-sec" style="display: none; margin-left: 20px;">
+                    <h4>Tumor Detection</h4>
+                    <img class="highlighted-img" src="" alt="Highlighted Tumor" style="width: 200px; border-radius: 5px;">
+                </div>
+            </div>
+            <div class="right">
+                <div class="info" style="text-align: left; margin-left: 30px; padding: 10px; background-color: rgb(180, 228, 195); border-radius: 5px; margin-right: 10px;">
+                </div>
+            </div>
+        </div>
+        <div class="loading" style="text-align: center; display: none;"><h4>Loading...</h4></div><br>
+    </center><br><br>
+
+    <script>
+        $(document).ready(function () {
+            $('.section').hide();  
+            $("#imageUp").change(function () {
+                $('.section').show(); 
+                $('.image-section').empty();
+                $('.image-section').show();
+                $('.report').css('display','none');
+                $('.info').css('display','none');
+                $('.highlighted-sec').css('display','none');
+                for (let i = 0; i < this.files.length; i++) {
+                    let reader = new FileReader();
+                    reader.onload = function (e) {
+                        let imagePreview = $('<img>', {
+                            class: 'img-responsive image-preview',
+                            src: e.target.result,
+                            style: 'width: 200px; margin: 10px;border-radius: 5px;'
+                        });
+                        let result = $('<h5>', {
+                            class: 'result',
+                            text: ''
+                        });
+                        $('.image-section').append($('<div>', { class: 'image-preview-container' }).append(imagePreview, result));
+                    };
+                    reader.readAsDataURL(this.files[i]);
+                }
+            });
+
+            $('#btn-pred').click(function () {
+                var form_data = new FormData($('#upload-form')[0]);
+                $('.loader').show();
+                $('.loading').show(); 
+                $('.loading').css('display', 'block');
+                $('.highlighted-sec').css('display','block');
+                $('.image-preview-container').css('display', 'flex');
+                $('.result').css('text-align', 'left');
+                $('.result').css('line-height', '30px');
+                $('.result').empty();
+                $('.info').css('display','block');
+                $.ajax({
+                    type: 'POST',
+                    url: '/',
+                    data: form_data,
+                    contentType: false,
+                    cache: false,
+                    processData: false,
+                    async: true,
+                    success: function (data) {
+                        $('.loader').hide();
+                        if (data.results && data.results.length > 0) {
+                            let results = data.results;
+                            symptoms = ""
+                            precautions = ""
+                            medications = ""
+                            $('.result').each(function (index) {
+                                let statusColor = results[index].result === "No Tumor" ? 'green' : 'red';
+                                if(results[index].result === "Glioma Tumor"){
+                                    symptoms = `<li>Headaches: Frequent, severe headaches that may worsen in the morning.</li>
+                                    <li>Seizures: New-onset seizures or a change in seizure patterns if you already have epilepsy.</li>
+                                    <li>Cognitive changes: Memory problems, confusion, difficulty concentrating.</li>
+                                    <li>Weakness or numbness: Weakness in one part of the body, often on one side.</li>
+                                    <li>Changes in vision or speech: Blurred vision, speech difficulties, or other sensory changes.</li>
+                                    <li>Personality or mood changes: Irritability, personality changes, or mood swings.</li>`;
+                                    precautions = `<li>Regular medical check-ups: Visit a healthcare provider for regular check-ups, especially if you have a family history of brain tumors or other risk factors.</li> 
+                                    <li>Minimize exposure to carcinogens: Reduce exposure to substances or environments known to increase the risk of cancer, such as radiation or certain chemicals.</li>`;
+                                    medications = `1. Food: A well-balanced and nutritious diet is essential for individuals with glioma tumors. Focus on foods that are rich in antioxidants, such as fruits and vegetables, as they may help reduce inflammation and support overall health. Whole grains, lean proteins, and healthy fats are also important.<br><br>
+                                    2. Medications: The treatment for glioma tumors typically involves a combination of surgery, radiation therapy, and chemotherapy. Medications prescribed can include corticosteroids to reduce brain swelling and control symptoms, anti-epileptic drugs (if seizures occur), and specific chemotherapy agents like temozolomide.
+                                    `;
+                                }
+                                else if(results[index].result === "Meningioma Tumor"){
+                                    symptoms = `<li>Headaches: Persistent, severe headaches.</li>
+                                    <li>Vision problems: Changes in vision, including blurred or double vision.</li>
+                                    <li>Seizures: New-onset seizures or changes in seizure patterns.</li>
+                                    <li>Weakness or numbness: Weakness or numbness in the limbs, typically on one side of the body.</li>
+                                    <li>Cognitive changes: Memory problems, difficulty concentrating.</li>
+                                    <li>Changes in personality: Mood swings or personality changes.</li>`;
+                                    precautions = `<li>Regular check-ups: Maintain routine medical examinations, especially if you have a family history of brain tumors or certain genetic conditions.</li> 
+                                    <li>Head injury prevention: Take precautions to avoid head injuries, as they may be linked to the development of meningiomas.</li>`;
+                                    medications = `1. Food: As with glioma tumors, a balanced and nutritious diet is important for overall health. Foods rich in vitamins and minerals, such as fruits, vegetables, whole grains, lean proteins, and healthy fats, can support the immune system and general well-being. <br><br>
+                                    2. Medications: The treatment approach for meningioma tumors depends on the size, location, and symptoms. Some individuals may not require medication, while others may need symptom management with pain relievers or medications to control seizures. Surgical removal is often the primary treatment, and radiation therapy may also be considered.`;
+                                }
+                                else if(results[index].result === "Pituitary Tumor"){
+                                    symptoms = `<li>Vision problems: Visual disturbances, including double vision, loss of peripheral vision, or blurriness.</li>
+                                    <li>Hormonal changes: Disruption of hormone production can lead to various symptoms, such as menstrual irregularities, changes in sex drive, or growth abnormalities in children.</li>
+                                    <li>Headaches: Persistent, severe headaches.</li>
+                                    <li>Fatigue: Unexplained fatigue and weakness.</li>
+                                    <li>Nausea and vomiting: Due to increased pressure on the brain.</li>
+                                    <li>Changes in personality: Mood swings or personality changes.</li>
+                                    `;
+                                    precautions = `<li>Regular hormonal monitoring: If you have a history of pituitary tumors or related hormonal disorders, consult an endocrinologist for regular hormone level monitoring.</li> 
+                                    <li>Eye exams: Regular eye examinations to detect visual changes caused by the tumor pressing on the optic nerves.</li>`;
+                                    medications = `1. Food: Pituitary tumors can affect hormone production, so dietary considerations may vary depending on the hormonal imbalances present. A registered dietitian can provide personalized guidance. In some cases, hormone replacement therapy may be necessary to address specific deficiencies.<br><br>
+                                    2. Medications: Medications for pituitary tumors often aim to regulate hormonal imbalances. For example, individuals with hormone-secreting tumors might receive medications to block hormone production or manage the symptoms of excess hormone secretion. If there's pressure on surrounding structures like the optic nerves, medications might be prescribed to reduce inflammation and alleviate symptoms.
+                                    `;
+                                }
+                                else{
+                                    symptoms = `No symptoms of Brain Tumor`;
+                                    precautions = `Taking precautions to reduce the risk of brain tumors involves:<br> <br>
+                                    1. Healthy Diet: Maintain a balanced diet rich in fruits, vegetables, and whole grains. Antioxidant-rich foods may help protect against cell damage.<br>
+
+                                    2. Limit Exposure to Carcinogens: Reduce exposure to substances and environments known to increase the risk of cancer, such as:<br>
+
+                                    3. Radiation: Minimize unnecessary exposure to ionizing radiation, including X-rays and CT scans.<br>
+                                        &emsp;Chemicals: Be cautious with exposure to toxic chemicals, especially in the workplace. Follow safety guidelines and use protective equipment.<br>
+                                        &emsp;Pesticides: Use pesticides and herbicides safely and follow instructions.<br>
+                                    4. Quit Smoking: Smoking is linked to various types of cancer, including brain cancer. Quitting smoking reduces cancer risk.<br>
+
+                                    5. Limit Alcohol Consumption: Excessive alcohol consumption is a risk factor for some cancers. Limit alcohol intake or abstain.<br>
+
+                                    6. Protect Against Head Injuries: Traumatic head injuries may increase the risk of brain tumors. Wear helmets during sports and use seat belts in vehicles.<br>
+
+                                    7. Healthy Lifestyle: Maintain a healthy lifestyle by staying physically active, managing stress, and getting enough sleep.<br>
+
+                                    8. Environmental Factors: Be aware of environmental factors, such as industrial emissions or pollution in your area. Take precautions if necessary.<br>
+
+                                    9. Regular Check-ups: Visit your healthcare provider for routine check-ups, especially if you have a family history of brain tumors or other risk factors. Early detection and treatment can improve outcomes.<br>
+
+                                    10. Genetic Counseling: If you have a family history of brain tumors or a genetic predisposition, consider genetic counseling and testing.<br>
+
+                                    11. Occupational Safety: If your job exposes you to potential carcinogens, follow safety protocols, use protective gear, and be aware of workplace risks.<br>
+
+                                    12. Limit Cell Phone Use: While there's no conclusive evidence linking cell phone use to brain tumors, it's prudent to use hands-free devices and limit prolonged exposure.<br>
+
+                                    13. Stay Informed: Stay informed about the latest research and health guidelines regarding brain tumor risk factors.<br>`;
+                                }
+
+                                let resultHtml = `
+                                    <center><h4><u>Report</u></h4><br></center>
+                                    <h4>Status: <span style="color: ${statusColor};">${results[index].result}</span></h4>
+                                    <br>
+                                    <h4>Confidence: ${results[index].confidence.toFixed(2)}%</h4><br>
+                                    <h4>Symptoms: </h4>
+                                    <h5>${symptoms}</h5><br>
+                                    <h4>Precautions: </h4>
+                                    <h5>${precautions}</h5><br>
+                                    <h5>${medications}</h5><br>
+                                `;
+                                $('.info').html(resultHtml);
+                                $('.report').css('display', 'block');
+                                $('.loading').css('display', 'none');
+                                if(results[index].result === "No Tumor") {
+                                    $('.highlighted-sec').hide();
+                                } else {
+                                    $('.highlighted-img').attr('src', data.highlighted_image_path);
+                                    $('.highlighted-sec').show(); 
+                                }
+                            });
+                            let confidenceText = `${results[0].confidence.toFixed(2)}%`;
+                            $('#confidence-text').text(confidenceText);
+                        } else {
+                            $('.result-container').html('<p>No results available.</p>');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(xhr.responseText);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
